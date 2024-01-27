@@ -151,7 +151,7 @@ class Expense(db.Model):
     vendor = db.Column(db.String(45))
     paid_amount = db.Column(db.Float)
     due_date = db.Column(db.Date)
-
+    attachment = db.Column(db.String(255))
 # -------------------LOG in Module Route start -------------------__
 
 @app.after_request
@@ -222,23 +222,30 @@ def getAllInvoices():
 
 
 
-from flask import request, jsonify
 
 @app.route('/submitexpense', methods=['POST'])
 @jwt_required()
 def submit_expense():
-        
-        data = flask.request.get_json()
+    # expense_date = flask.request.form['expense_date']
+    # expense_number = flask.request.form['expense_number']
+    # invoice_number = flask.request.form['invoice_number']
+    # amount = flask.request.form['amount']
+    # notes = flask.request.form['notes']
+    # vendor = flask.request.form['vendor']
+    # currency = flask.request.form['currency']
+    # attachment = flask.request.form['attachment']
+    data = flask.request.get_json()
 
-        expense_date = data.get('expense_date')
-        expense_number = data.get('expense_number')
-        invoice_number = data.get('invoice_number')
-        amount = data.get('amount')
-        notes = data.get('notes')
-        vendor = data.get('vendor')
-        currency = data.get('currency')
-
-        expense = Expense(
+    expense_date = data.get('expense_date')
+    expense_number = data.get('expense_number')
+    invoice_number = data.get('invoice_number')
+    amount = data.get('amount')
+    notes = data.get('notes')
+    vendor = data.get('vendor')
+    currency = data.get('currency')
+    attachment = data.get('attachment')
+    print(attachment)
+    expense = Expense(
             expense_date=expense_date,
             expense_number=expense_number,
             invoice_number=invoice_number,
@@ -246,11 +253,12 @@ def submit_expense():
             amount=amount,
             notes=notes,
             vendor=vendor,
+            attachment=attachment
         )
-        db.session.add(expense)
-        db.session.commit()
+    db.session.add(expense)
+    db.session.commit()
 
-        return jsonify({'message': 'Expense submitted successfully'})
+    return jsonify({'message': 'Expense submitted successfully'})
 
 
 @app.route('/getAllExpenses', methods=['GET'])
@@ -272,7 +280,8 @@ def get_all_expenses():
             'vendor': expense.vendor,
             'currency': expense.currency,
             'due_date':expense.due_date,
-            'paid_amount':expense.paid_amount
+            'paid_amount':expense.paid_amount,
+            'attachment':expense.attachment
         }
         for expense in expenses
     ]
