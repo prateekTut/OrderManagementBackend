@@ -288,6 +288,40 @@ def get_all_expenses():
 
     return jsonify({'expenses': expenses_list})
 
+@app.route('/editexpense/<int:expense_id>', methods=['PUT'])
+@jwt_required()
+def edit_expense(expense_id):
+    data = request.get_json()
+
+    expense = Expense.query.get(expense_id)
+    if not expense:
+        return jsonify({'error': 'Expense not found'}), 404
+
+    expense.expense_date = data.get('expense_date', expense.expense_date)
+    expense.expense_number = data.get('expense_number', expense.expense_number)
+    expense.invoice_number = data.get('invoice_number', expense.invoice_number)
+    expense.amount = data.get('amount', expense.amount)
+    expense.notes = data.get('notes', expense.notes)
+    expense.vendor = data.get('vendor', expense.vendor)
+    expense.currency = data.get('currency', expense.currency)
+    expense.attachment = data.get('attachment', expense.attachment)
+
+    db.session.commit()
+
+    return jsonify({'message': 'Expense updated successfully'})
+
+@app.route('/deleteexpense/<int:expense_id>', methods=['DELETE'])
+@jwt_required()
+def delete_expense(expense_id):
+    expense = Expense.query.get(expense_id)
+    if not expense:
+        return jsonify({'error': 'Expense not found'}), 404
+
+    db.session.delete(expense)
+    db.session.commit()
+
+    return jsonify({'message': 'Expense deleted successfully'})
+
 if __name__ == '__main__':
     app.run(debug=True)
 
