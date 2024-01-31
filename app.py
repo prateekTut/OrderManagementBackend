@@ -16,9 +16,11 @@ from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
 from sqlalchemy.orm import aliased
 import os
+from dateutil import parser
 
 app = Flask(__name__)
 CORS(app)
+CORS(app, origins=['http://localhost:3000'])
 CORS(app, support_credentials=True)
 # cors = CORS(app, resources={r"/gettutoruser/*": {"origins": "http://localhost:3000"}})
 
@@ -152,6 +154,8 @@ class Expense(db.Model):
     paid_amount = db.Column(db.Float)
     due_date = db.Column(db.Date)
     attachment = db.Column(db.String(255))
+    payment_date = db.Column(db.Date)
+    payment_method = db.Column(db.String(45))
 # -------------------LOG in Module Route start -------------------__
 
 @app.after_request
@@ -281,7 +285,9 @@ def get_all_expenses():
             'currency': expense.currency,
             'due_date':expense.due_date,
             'paid_amount':expense.paid_amount,
-            'attachment':expense.attachment
+            'attachment':expense.attachment,
+            'payment_method':expense.payment_method,
+            'payment_date':expense.payment_date
         }
         for expense in expenses
     ]
@@ -321,6 +327,36 @@ def delete_expense(expense_id):
     db.session.commit()
 
     return jsonify({'message': 'Expense deleted successfully'})
+
+
+@app.route('/update_payment/<int:expense_id>', methods=['PUT'])
+@jwt_required()
+def update_payment(expense_id):
+    data = request.form  # Use request.form to get form data
+
+    expense = Expense.query.get(expense_id)
+    if not expense:
+        return jsonify({'error': 'Expense not found'}), 404
+
+    # Update payment-related fields
+    expense.paid_amount = data.get('paid_amount', expense.paid_amount)
+    
+    # If 'payment_date' is provided in the form data, convert it to a datetime object
+    payment_date_str = data.get('payment_date')
+    if payment_date_str:
+        try:
+            payment_date_obj = parser.parse(payment_date_str)
+            expense.payment_date = payment_date_obj.strftime('%Y-%m-%d')
+        except ValueError:
+            return jsonify({'error': 'Invalid date format'}), 400
+
+    expense.payment_method = data.get('payment_method', expense.payment_method)
+
+    db.session.commit()
+
+    return jsonify({'message': 'Payment information updated successfully'})
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
